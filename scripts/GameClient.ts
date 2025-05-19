@@ -1,3 +1,7 @@
+import EvmStateMachine from "@peer3/state-channels-plus/dist/src/evm/EvmStateMachine";
+import { ContractExecuter } from "@peer3/state-channels-plus/dist/src/evm";
+import { ethers } from "ethers";
+
 export interface CounterGameState {
     counter: number;
     participants: string[];
@@ -8,10 +12,17 @@ export interface CounterGameState {
     betAmount: number;
 }
 
-export class CounterGameClient {
+export class CounterGameClient extends EvmStateMachine {
     private state: CounterGameState;
 
-    constructor(participants: string[], betAmount: number, initialBalances: number[]) {
+    constructor(
+        contractExecuter: ContractExecuter,
+        contractInterface: ethers.Interface,
+        participants: string[],
+        betAmount: number,
+        initialBalances: number[]
+    ) {
+        super(contractExecuter, contractInterface);
         if (participants.length === 0) {
             throw new Error("Game must have at least one participant.");
         }
@@ -30,7 +41,7 @@ export class CounterGameClient {
         };
     }
 
-    getState(): Readonly<CounterGameState> {
+    getInternalState(): Readonly<CounterGameState> {
         return this.state;
     }
 
@@ -141,58 +152,3 @@ export class CounterGameClient {
         return true;
     }
 }
-
-// Example Usage (optional, can be removed or moved to a test file)
-/*
-try {
-    const gameClient = new CounterGameClient(["Alice", "Bob"], 50, [100, 100]);
-    console.log("Initial State:", gameClient.getState());
-
-    gameClient.increment("Alice", 10);
-    console.log("After Alice's move:", gameClient.getState());
-
-    gameClient.increment("Bob", 10);
-    console.log("After Bob's move:", gameClient.getState());
-
-    // Simulate Alice reaching the goal
-    gameClient.increment("Alice", 80); // Alice's total: 10 + 80 = 90
-    console.log("After Alice's move (almost win):", gameClient.getState());
-    
-    try {
-        gameClient.increment("Alice", 5); // Bob's turn
-    } catch (e: any) {
-        console.error(e.message);
-    }
-
-    gameClient.increment("Bob", 5); // Bob's total: 15
-    console.log("After Bob's move:", gameClient.getState());
-    
-    gameClient.increment("Alice", 10); // Alice's total: 90 + 10 = 100. Alice wins.
-    console.log("After Alice wins:", gameClient.getState());
-
-    // Test removing a participant
-    const gameClient2 = new CounterGameClient(["Charlie", "David"], 20, [50, 60]);
-    console.log("\nInitial State (Game 2):", gameClient2.getState());
-    const removedInfo = gameClient2.removeParticipant("Charlie");
-    console.log("After removing Charlie:", gameClient2.getState());
-    console.log("Removed Info:", removedInfo);
-    if (gameClient2.getState().winner !== "0x0000000000000000000000000000000000000000") {
-        console.log(`Winner is ${gameClient2.getState().winner}`);
-    }
-
-
-    const gameClient3 = new CounterGameClient(["Eve", "Frank", "Grace"], 30, [100, 100, 100]);
-    console.log("\nInitial State (Game 3):", gameClient3.getState());
-    gameClient3.increment("Eve", 10);
-    console.log("After Eve's move:", gameClient3.getState());
-    const removedFrank = gameClient3.removeParticipant("Frank");
-    console.log("After removing Frank:", gameClient3.getState());
-    console.log("Removed Frank's Info:", removedFrank);
-    gameClient3.increment("Grace", 10); // Grace's turn
-    console.log("After Grace's move:", gameClient3.getState());
-
-
-} catch (error: any) {
-    console.error("Error during game simulation:", error.message);
-}
-*/ 
